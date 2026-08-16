@@ -1,0 +1,15 @@
+[package]
+name = "am02-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serialport = { version = "4", default-features = false }
+crc32fast = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,11 @@
+{
+  "name": "AM02 Decky",
+  "author": "am02-service team",
+  "flags": ["root"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["tdp", "root", "ayaneo", "am02"],
+    "description": "AYANEO AM02 mini PC reverse-engineered side-screen service UI: TDP presets, manual TDP, display language/theme",
+    "image": ""
+  }
+}

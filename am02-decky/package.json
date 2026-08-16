@@ -1,0 +1,47 @@
+{
+  "name": "am02-decky",
+  "version": "0.1.0",
+  "description": "AYANEO AM02 mini PC Decky plugin: TDP presets + manual TDP + display language/theme (reverse-engineered AYASpace clone)",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "decky",
+    "plugin",
+    "tdp",
+    "ayaneo"
+  ],
+  "author": "am02-service team",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "@decky/rollup": "^1.0.1",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.7",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "rollup": "^4.18.1",
+    "rollup-plugin-external-globals": "^0.12.0",
+    "rollup-plugin-import-assets": "^1.1.1",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@decky/api": "^1.0.6",
+    "@decky/ui": "^4.11.1",
+    "react-icons": "^4.4.0",
+    "tslib": "^2.6.3"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
+    }
+  }
+}

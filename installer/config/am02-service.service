@@ -1,0 +1,18 @@
+[Unit]
+Description=AYANEO AM02 side-screen service
+After=multi-user.target systemd-modules-load.service
+
+[Service]
+Type=simple
+User=root
+# 开机先确保 ryzen_smu 已加载（幂等；atomic 系统 /lib/modules 只读，故用 insmod）
+ExecStartPre=/usr/bin/bash -c 'lsmod | grep -q ^ryzen_smu || insmod /var/lib/am02-service/modules/ryzen_smu.ko'
+ExecStart=/var/lib/am02-service/am02-service
+Environment=AM02_SERVICE_SOCK=/run/am02-service.sock
+# 保证 ryzenadj 在 PATH 上（部署在 /var/lib/am02-service/bin）
+Environment=PATH=/var/lib/am02-service/bin:/usr/local/bin:/usr/bin:/bin
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
