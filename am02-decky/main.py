@@ -174,6 +174,8 @@ def _find_ryzenadj() -> str | None:
     if path:
         return path
     for cand in (
+        "/usr/local/bin/ryzenadj",
+        "/usr/bin/ryzenadj",
         os.path.expanduser("~/.local/bin/ryzenadj"),
         os.path.expanduser("~/.nix-profile/bin/ryzenadj"),
         os.path.expanduser("~/homebrew/plugins/am02-decky/bin/ryzenadj"),
