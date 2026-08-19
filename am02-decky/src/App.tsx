@@ -17,11 +17,32 @@ import ManualTdpSlider from "./components/ManualTdpSlider";
 import DisplaySettings from "./components/DisplaySettings";
 import LocationSettings from "./components/LocationSettings";
 
+// SteamOS 的 steamwebhelper 跑在 pressure-vessel 容器里，CEF 的 CJK
+// fallback 不读主机 fontconfig（JP 字形优先于 SC）。这里直接在插件
+// 挂载的 DOM 根上强制简体字形，绕开容器的字体 fallback 问题。
+const FONT_STYLE_ID = "am02-decky-font-cjk-sc";
+
+function injectFontStyle() {
+  if (document.getElementById(FONT_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = FONT_STYLE_ID;
+  style.textContent = `
+    #quickAccessMenu *, ._decky_quick_access_menu *,
+    [class*="decky"] *:not(i):not(svg) {
+      font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC",
+                   "Microsoft YaHei", sans-serif !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export default function App() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [presets, setPresets] = useState<TdpPreset[]>([]);
 
   useEffect(() => {
+    // 注入简体字形 CSS（每次挂载确保存在）
+    injectFontStyle();
     let cancelled = false;
     (async () => {
       const [s, p] = await Promise.all([getSettings(), getTdpProfiles()]);
