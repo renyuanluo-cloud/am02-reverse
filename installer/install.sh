@@ -53,6 +53,14 @@ esac
 [ -e /dev/ttyS0 ] || fail "未找到 /dev/ttyS0 —— 本工具仅适用于带副屏的 AYANEO AM02"
 log "OS=${ID}  arch=x86_64  串口=/dev/ttyS0  OK"
 
+# SteamOS 只读根解锁（Bazzite 根可写无需处理）
+case "${ID:-}" in
+  *steamos*)
+    steamos-readonly disable 2>/dev/null \
+      || log "提示：steamos-readonly 解锁失败（可能已可写）"
+    ;;
+esac
+
 # ── Step 1 ryzen_smu 内核模块 ─────────────────────────────────────
 step 1 "ryzen_smu 内核模块（AMD SMU 功耗/频率）"
 mkdir -p "$INSTALL_ROOT/modules"
@@ -139,8 +147,14 @@ fi
 rm -rf "$PLUGIN_DST"
 cp -r "$SRC_PLUGIN" "$PLUGIN_DST" || fail "复制插件失败"
 chown -R "$PLUGIN_USER":"$PLUGIN_USER" "$PLUGIN_DST"
-runuser -u "$PLUGIN_USER" -- systemctl --user restart plugin_loader 2>/dev/null \
-  || log "提示：无法热重启 plugin_loader，重启机器后插件生效"
+# 兼容两种 Decky 服务形态：SteamOS 系统级 plugin_loader-release / Bazzite user 级 plugin_loader
+if systemctl list-unit-files 2>/dev/null | grep -q '^plugin_loader-release'; then
+  systemctl restart plugin_loader-release 2>/dev/null \
+    || log "提示：无法热重启 plugin_loader-release，重启机器后插件生效"
+else
+  runuser -u "$PLUGIN_USER" -- systemctl --user restart plugin_loader 2>/dev/null \
+    || log "提示：无法热重启 plugin_loader，重启机器后插件生效"
+fi
 log "插件已部署到 $PLUGIN_DST"
 
 # ── Step 7 收尾校验 ───────────────────────────────────────────────
