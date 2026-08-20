@@ -332,30 +332,20 @@ function LocationSettings({ location, t, onLocationChange, }) {
             window.SP_REACT.createElement(DFL.ButtonItem, { layout: "below", description: weatherOn ? (meta ? labelOf(meta) : t.locationHint) : t.locationHint, onClick: openPicker }, weatherOn ? location : t.locationNotSet))));
 }
 
-// SteamOS 的 steamwebhelper 跑在 pressure-vessel 容器里，CEF 的 CJK
-// fallback 不读主机 fontconfig（JP 字形优先于 SC）。这里直接在插件
-// 挂载的 DOM 根上强制简体字形，绕开容器的字体 fallback 问题。
-const FONT_STYLE_ID = "am02-decky-font-cjk-sc";
-function injectFontStyle() {
-    if (document.getElementById(FONT_STYLE_ID))
-        return;
-    const style = document.createElement("style");
-    style.id = FONT_STYLE_ID;
-    style.textContent = `
-    #quickAccessMenu *, ._decky_quick_access_menu *,
-    [class*="decky"] *:not(i):not(svg) {
-      font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC",
-                   "Microsoft YaHei", sans-serif !important;
-    }
-  `;
-    document.head.appendChild(style);
-}
+// SteamOS 的 steamwebhelper 跑在 pressure-vessel 容器里，Steam 全局样式
+// (Motiva Sans) 的 CJK fallback 会走 JP 字形。插件元素用的是 Steam hash class
+// （不含 "decky"），且 App 的 useEffect 里 document 不一定指向插件实际渲染的
+// 页面 —— 所以此前 document.head 注入 + [class*="decky"] 选择器全部失效。
+// 正确做法：把 <style> 作为 React 子节点渲染在插件根里（随插件 DOM 进真实
+// document），并用全局 * 选择器 + !important 强制简体字形。
+const FONT_STYLE = `*:not(i):not(svg):not(script):not(style):not(link):not(noscript) {
+  font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC",
+               "Microsoft YaHei", sans-serif !important;
+}`;
 function App() {
     const [settings, setSettings] = SP_REACT.useState(null);
     const [presets, setPresets] = SP_REACT.useState([]);
     SP_REACT.useEffect(() => {
-        // 注入简体字形 CSS（每次挂载确保存在）
-        injectFontStyle();
         let cancelled = false;
         (async () => {
             const [s, p] = await Promise.all([getSettings(), getTdpProfiles()]);
@@ -391,6 +381,7 @@ function App() {
     const location = settings?.location ?? "";
     const t = translations[pickLang(language)];
     return (window.SP_REACT.createElement("div", null,
+        window.SP_REACT.createElement("style", null, FONT_STYLE),
         window.SP_REACT.createElement(ProfileList, { presets: presets, currentProfile: currentProfile, t: t, onSelect: async (id) => {
                 const ok = await setTdpProfile(id);
                 if (ok)
