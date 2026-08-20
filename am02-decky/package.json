@@ -1,6 +1,6 @@
 {
   "name": "am02-decky",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AYANEO AM02 mini PC Decky plugin: TDP presets + manual TDP + display language/theme (reverse-engineered AYASpace clone)",
   "type": "module",
   "scripts": {
