@@ -97,27 +97,20 @@ fn main() -> Result<()> {
     );
 
     loop {
-        // 1. 先处理输入（副屏切档 + IPC 下发），再推帧。这样推出的那一帧
-        //    一定携带最新 pack[0x61]/pack[0x79]/…，副屏不会先收到「旧档位帧」
-        //    而弹回（回弹根治的关键：处理顺序从「先推后读」改为「先读后推」）。
+        // 主循环顺序（2026-08-19 修复，实测根因）：
+        //   副屏对 OnNormalInfo 帧的响应是「立即全零 ACK + 延迟有效确认」；
+        //   若先短读 15ms 再推帧，15ms 窗口读不满/读错位 → 副屏进入响应退化
+        //   （持续回全零）→ 配置字段（主题/档位）不应用 → 30s+ 兜底延迟。
+        //   实测「先推帧 → 长窗口(300ms)读满 29B 响应」30/30 帧副屏持续正常
+        //   响应且随 theme/mode 变化。故改为先推后读，读窗口 300ms。
         let mut state_changed = false;
 
-        // 1a. 读副屏命令（短超时：29B 响应 ~3ms 到齐，15ms 足够读满；无响应时
-        //     只多花 ~15ms，不再拖慢推帧周期）
-        if let Some(resp_buf) = read_response(&mut *port, 15) {
-            let resp = Response::parse(&resp_buf);
-            if handle_command(&resp, &power_shared) {
-                state_changed = true;
-            }
-        }
-
-        // 1b. 处理 IPC 语言/主题/功耗/天气变更
+        // 1. 处理 IPC 语言/主题/功耗/天气变更（推帧前取最新状态）
         if ipc_rx.try_recv().is_ok() {
             state_changed = true;
         }
 
-        // 2. 采集真实数据并推一帧（TDP 值用缓存，避免每秒 fork ryzenadj；
-        //    pack[0x61]/pack[0x69] 已在步骤 1 更新到最新）
+        // 2. 采集真实数据并推一帧
         let disp = *disp_shared.lock().unwrap();
         let power = *power_shared.lock().unwrap();
         let mut snap = col.collect();
@@ -140,6 +133,14 @@ fn main() -> Result<()> {
             continue;
         }
         port.flush().ok();
+
+        // 3. 推帧后读副屏响应（长窗口 300ms：读满 29B 有效确认，副屏不会退化）
+        if let Some(resp_buf) = read_response(&mut *port, 300) {
+            let resp = Response::parse(&resp_buf);
+            if handle_command(&resp, &power_shared) {
+                state_changed = true;
+            }
+        }
 
         if state_changed {
             tracing::info!("已回推新状态 {:?} {:?}", disp, power);
